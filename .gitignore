@@ -1,0 +1,8 @@
+# Debugging files
+**/.gdb_history
+**/flag
+
+# IDA
+**/*.id*
+**/*.nam
+**/*.til

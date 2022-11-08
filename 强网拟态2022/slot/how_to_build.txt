@@ -1,0 +1,8 @@
+git clone https://github.com/wasm3/wasm3.git
+cd wasm3
+git checkout 9dcfce271c2fac86823725fc9ec0f75309d820e4
+git apply patch.diff
+mkdir build
+cd build
+cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_FLAGS="-z execstack" -DCMAKE_CXX_FLAGS="-z execstack" ..
+make

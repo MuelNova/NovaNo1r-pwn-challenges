@@ -1,0 +1,93 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 2a4a8aa..b1cac8c 100755
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -186,6 +186,8 @@ endif()
+ 
+ target_link_libraries(${OUT_FILE} m3)
+ 
++set(BUILD_WASI "none")
++
+ if(BUILD_WASI MATCHES "simple")
+   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Dd_m3HasWASI")
+ elseif(BUILD_WASI MATCHES "metawasi")
+diff --git a/platforms/app/main.c b/platforms/app/main.c
+index d4af4e4..0327153 100644
+--- a/platforms/app/main.c
++++ b/platforms/app/main.c
+@@ -71,7 +71,7 @@ M3Result link_all  (IM3Module module)
+     res = m3_LinkSpecTest (module);
+     if (res) return res;
+ 
+-    res = m3_LinkLibC (module);
++    /*res = m3_LinkLibC (module);
+     if (res) return res;
+ 
+ #if defined(LINK_WASI)
+@@ -92,7 +92,7 @@ M3Result link_all  (IM3Module module)
+     }
+     if (res == m3Err_functionLookupFailed) { res = NULL; }
+ #endif
+-
++    */
+     return res;
+ }
+ 
+@@ -281,7 +281,8 @@ M3Result repl_call  (const char* name, int argc, const char* argv[])
+ 
+         return result;
+ #else
+-        return "WASI not linked";
++        return m3_CallArgv(func, 0, NULL);
++        //return "WASI not linked";
+ #endif
+     }
+ 
+diff --git a/source/m3_compile.c b/source/m3_compile.c
+index 8a93330..006ddfa 100644
+--- a/source/m3_compile.c
++++ b/source/m3_compile.c
+@@ -1791,6 +1791,17 @@ _   (EmitSlotNumOfStackTopAndPop (o));
+     _catch: return result;
+ }
+ 
++static
++M3Result  Compile_Pwn  (IM3Compilation o, m3opcode_t i_opcode)
++{
++    M3Result result = m3Err_none;
++    IM3Operation op = op_Pwn;
++
++_   (EmitOp  (o, op));
++_   (EmitSlotNumOfStackTopAndPop (o));
++
++    _catch: return result;
++}
+ 
+ static
+ M3Result  ReadBlockType  (IM3Compilation o, IM3FuncType * o_blockType)
+@@ -2539,7 +2550,7 @@ const M3OpInfo c_operationsFC [] =
+ 
+     M3OP( "memory.copy",            0,  none,   d_emptyOpList,                           Compile_Memory_CopyFill ), // 0x0a
+     M3OP( "memory.fill",            0,  none,   d_emptyOpList,                           Compile_Memory_CopyFill ), // 0x0b
+-
++    M3OP( "wasm.pwn",               0,  none,   d_emptyOpList,                           Compile_Pwn ), //0x0c
+ 
+ # ifdef DEBUG
+     M3OP( "termination", 0, c_m3Type_unknown ) // for find_operation_info
+diff --git a/source/m3_exec.h b/source/m3_exec.h
+index 461ffaa..f21c0ee 100644
+--- a/source/m3_exec.h
++++ b/source/m3_exec.h
+@@ -742,6 +742,12 @@ d_m3Op  (MemFill)
+     else d_outOfBoundsMemOp (destination, size);
+ }
+ 
++d_m3Op  (Pwn)
++{
++    u32 *ptr = slot_ptr (u32);
++    printf("ptr=0x%lx\n",ptr);
++    nextOp ();
++}
+ 
+ // it's a debate: should the compilation be trigger be the caller or callee page.
+ // it's a much easier to put it in the caller pager. if it's in the callee, either the entire page
