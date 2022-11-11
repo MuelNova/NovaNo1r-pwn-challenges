@@ -1,6 +1,7 @@
 # Debugging files
 **/.gdb_history
 **/flag
+**/lib*.i64
 
 # IDA
 **/*.id*

