@@ -3,8 +3,12 @@
 **/flag
 **/lib*.i64
 **/fs*/
+**/vmlinux*
 
 # IDA
 **/*.id*
 **/*.nam
 **/*.til
+
+# BackupFile
+**/*-NovaNo1r*
